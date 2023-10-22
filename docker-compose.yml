@@ -1,0 +1,21 @@
+version: '3'
+
+networks:
+  my-network:
+    driver: bridge
+
+services:
+  observer1:
+    image: cryptovote
+    network_mode: "host"
+    environment:
+      - PORT=7075
+    #ports:
+    #  - 7075:7075
+  observer2:
+    image: cryptovote
+    environment:
+      - PORT=7076
+    network_mode: "host"
+    #ports:
+    #  - 7076:7076
