@@ -27,10 +27,40 @@ end
 # Show all eligible voters
 get '/voters' do
   response = {
-    voters: blockchain.eligible_voters,
-    length: blockchain.eligible_voters.length
+    voters: blockchain.getEligableVoters(),
+    voters_hash: blockchain.getEligableVotersHash(),
+    length: blockchain.getEligableVoters().length
   }
+  
   json response, charset: 'utf-8'
+end
+
+# Create a new voters list
+post '/voters_list', provides: :json do
+  params = JSON.parse(request.body.read)
+
+  # Check that the required fields are in the POST'ed data
+  required = %w[voters voters_hash]
+  unless required.all? { |key| params.key?(key) }
+    status 400
+    return 'Missing values'
+  end
+
+  # Set the voters list
+  index = blockchain.setEligableVoters(
+    voters: params['voters'], voters_hash: params['voters_hash']
+  )
+
+  if index
+    msg = 'Voters are recorded'
+    sts = 201
+  else
+    msg = 'Voters are not valid'
+    sts = 405
+  end
+
+  status sts
+  json msg, charset: 'utf-8'
 end
 
 # Create a new transaction
@@ -88,7 +118,7 @@ get '/nodes/resolve' do
   response = if blockchain.resolve_conflicts
                {
                  message: 'Our chain was replaced',
-                 new_chain: blockchain.chain
+                 chain: blockchain.chain
                }
              else
                {
@@ -96,6 +126,15 @@ get '/nodes/resolve' do
                  chain: blockchain.chain
                }
              end
+  status 200
+  json response
+end
+
+get '/nodes/registered' do  # this is the common getaddr function used by bitcoin clients to update their network node list
+  response = {
+    message: 'Registered Observers',
+    nodes: blockchain.nodes
+  }
   status 200
   json response
 end

@@ -1,15 +1,17 @@
 require 'json'
 require 'set'
+require 'rest-client'
 require './validator'
 require './crypto_helper'
 
 class Blockchain
-  attr_reader :chain, :validator, :nodes
+  attr_reader :chain, :validator, :nodes, :eligible_voters
 
   def initialize
     @chain = []
     @validator = Validator.new(chain)
     @nodes = Set.new
+    @eligible_voters = []
 
     # Create the genesis block
     new_block(previous_hash: 1, transaction: {})
@@ -58,18 +60,18 @@ class Blockchain
 
     neighbors.each do |node|
       response = RestClient.get("http://#{node}/chain")
-      next unless response.code == '200'
+      next unless response.code != '200'
       response_body = JSON.parse(response.body)
       length = response_body['length']
       chain = response_body['chain']
 
-      validator = Validator.new(chain)
+      new_chain_validator = Validator.new(chain)
 
       # Check if the length is longer and the chain is valid
-      if length > max_length && local_validator.valid_chain?
+      if length > max_length && new_chain_validator.valid_chain?
         max_length = length
         new_chain = chain
-        new_validator = validator
+        new_validator = new_chain_validator
       end
     end
 
@@ -89,4 +91,18 @@ class Blockchain
     parsed_url = URI.parse(address)
     nodes.add("#{parsed_url.host}:#{parsed_url.port}")
   end
+
+  def getEligableVoters()
+    return @eligible_voters
+  end
+
+  def getEligableVotersHash()
+    return @eligible_voters_hash
+  end
+
+  def setEligableVoters(voters:, voters_hash:)
+    @eligible_voters = voters
+    @eligible_voters_hash = voters_hash
+  end
+
 end

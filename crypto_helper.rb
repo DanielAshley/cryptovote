@@ -29,6 +29,12 @@ class CryptoHelper
     Digest::SHA256.hexdigest(block_str)
   end
 
+  # creates a SHA-256 hash of the voter list
+  def self.voters_hash(voters)
+    voters_str = JSON.dump(voters)
+    Digest::SHA256.hexdigest(voters_str)
+  end
+
   def self.rsa_key(path)
     OpenSSL::PKey::RSA.new(File.read(path))
   end
