@@ -12,8 +12,10 @@ class Validator
 
   def valid_transaction?(vote_cipher, ring_members, ring_sig_hex)
     ring_sig = CryptoHelper.ringsig_from(ring_sig_hex)
+    
     # check if the voter has already voted
     return false if already_voted.include? ring_sig.key_image
+    
     # check if all the ring members are eligible voter
     return false unless (ring_members - eligible_voters).empty?
 
@@ -31,12 +33,12 @@ class Validator
       # validate hash of block
       return false if block['previous_hash'] != CryptoHelper.block_hash(last_block)
 
-      transaction = block['transaction']
+      #transaction = block['transaction']
 
       # validate the transaction
-      return false unless valid_transaction?(transaction['vote'], transaction['ring_members'], transaction['ring_signature'])
+      #return false unless valid_transaction?(transaction['vote'], transaction['ring_members'], transaction['ring_signature'])
 
-      already_voted.push(key_image(transaction['ring_signature']))
+      #already_voted.push(key_image(transaction['ring_signature']))
 
       last_block = block
       current_index += 1

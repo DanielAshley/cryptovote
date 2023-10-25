@@ -8,7 +8,8 @@ WORKDIR /usr/src/app
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
 
-COPY . .
+COPY /data ./data
+COPY blockchain.rb observer.rb validator.rb crypto_helper.rb worker.rb ./
 
 # default port
 ENV PORT=7075
