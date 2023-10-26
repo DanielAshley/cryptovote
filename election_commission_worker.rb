@@ -5,26 +5,24 @@ require 'rest-client'
 require 'optparse'
 require './crypto_helper'
 
+# Election commission worker used to initialize the first observer node
 class ElectionCommissionWorker
-  ELIGIBLE_VOTERS_PATH = 'data/public_keys.json'.freeze
-  ELIGIBLE_VOTERS_HASH_PATH = 'data/public_keys_hash.json'.freeze
-  CANDIDATES_PATH = 'data/candidates.json'.freeze
-  ELECTION_PUBLIC_KEY_PATH = 'data/election_public.pem'.freeze
-  #RANDOM_RING_MEMBERS = ENV['RING_MEMBERS'].to_i || 10
-
   attr_reader :eligible_voters, :eligible_voters_hash, :candidates, :observer, :election_public_key
 
-  def initialize(observer)
-    @eligible_voters = JSON.parse(File.read(ELIGIBLE_VOTERS_PATH))
-    # TODO: Create 'public_keys_hash.json' file
-    @eligible_voters_hash = File.read(ELIGIBLE_VOTERS_HASH_PATH)
-    @candidates = JSON.parse(File.read(CANDIDATES_PATH))
-  #  @voter_private_key = CryptoHelper.private_key_from(voter_private_key_hex)
-    @election_public_key = CryptoHelper.rsa_key(ELECTION_PUBLIC_KEY_PATH)
+  # Initializes the election commission worker with the data needed to start the voting blockchain
+  #
+  # @param observer [String] the address of the observer node to be setup
+  # @param eligible_voters [Array] the list of eligible voters.
+  # @param eligible_voters_hash [String] the hash value of the list of eligible voters. @Note the list of eligible voters must not change or be reordered or the hash value wont match.
+  # @param election_public_key [String] the public key used during the vote. @Note the corresponding private key is kept secret/safe until the end of the election
+  def initialize(observer, eligible_voters, eligible_voters_hash, election_public_key)
     @observer = observer
+    @eligible_voters = eligible_voters
+    @eligible_voters_hash = eligible_voters_hash
+    @election_public_key = election_public_key
   end
 
-  def postNodes(nodes)
+  def setNodes(nodes)
     nodes_payload = {
       nodes: nodes
     }
@@ -72,8 +70,8 @@ class ElectionCommissionWorker
   end
 
   def resolveChain()
-    voters = JSON.parse(RestClient.get("#{observer}/nodes/resolve"))['chain']
-    return voters
+    chain = JSON.parse(RestClient.get("#{observer}/nodes/resolve"))['chain']
+    return chain
   end
 
 
@@ -89,7 +87,16 @@ if $PROGRAM_NAME == __FILE__
 
   abort(usage) unless options[:observer]
 
-  worker = ElectionCommissionWorker.new(options[:observer])
+  
+  ELIGIBLE_VOTERS_PATH = 'data/public_keys.json'.freeze
+  ELIGIBLE_VOTERS_HASH_PATH = 'data/public_keys_hash.json'.freeze
+  CANDIDATES_PATH = 'data/candidates.json'.freeze
+  ELECTION_PUBLIC_KEY_PATH = 'data/election_public.pem'.freeze
+  eligible_voters = JSON.parse(File.read(ELIGIBLE_VOTERS_PATH))
+  eligible_voters_hash = File.read(ELIGIBLE_VOTERS_HASH_PATH)
+  election_public_key = CryptoHelper.rsa_key(ELECTION_PUBLIC_KEY_PATH)
+
+  worker = ElectionCommissionWorker.new(options[:observer], eligible_voters, eligible_voters_hash, election_public_key)
 
   # Verification of votors list
   voters_list = worker.getVoters()

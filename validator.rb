@@ -1,8 +1,13 @@
+#!/usr/bin/env ruby
+
 require './crypto_helper'
 
+# A validator object used to determine if a blockchain or new vote is valid
 class Validator
   attr_reader :chain, :already_voted, :eligible_voters, :candidates
-
+    
+  # Initializing a validator object used to determine if a blockchain or new vote is valid
+  # @param chain [Hash] the blockchain to be validated
   def initialize(chain)
     @chain = chain
     @already_voted = voters_from_chain
@@ -16,6 +21,9 @@ class Validator
     # check if the voter has already voted
     return false if already_voted.include? ring_sig.key_image
     
+    # check if an eligible_voters list was populated, return false if it hasn't
+    #return false if eligible_voters.empty?
+
     # check if all the ring members are eligible voter
     return false unless (ring_members - eligible_voters).empty?
 

@@ -116,16 +116,16 @@ end
 
 get '/nodes/resolve' do
   response = if blockchain.resolve_conflicts
-               {
-                 message: 'Our chain was replaced',
-                 chain: blockchain.chain
-               }
-             else
-               {
-                 message: 'Our chain is authoritative',
-                 chain: blockchain.chain
-               }
-             end
+      {
+        message: 'Our chain was replaced',
+        chain: blockchain.chain
+      }
+    else
+      {
+        message: 'Our chain is authoritative',
+        chain: blockchain.chain
+      }
+    end
   status 200
   json response
 end
