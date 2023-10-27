@@ -125,11 +125,12 @@ class Worker
     return true
   end
 
+  # @TODO: Perform more thourough verification
   # Verifies the blockchain stored on an observer node
   #
   # @param observer_address [String] the address of the observer node to be verified.
-  def verifyBlockchain()
-    local_chain = getChain()
+  def verifyBlockchain(observer_address: @observer)
+    local_chain = getChain(observer_address: observer_address)
     if local_chain.empty? # Check if the current chain is empty.
       # chain is empty, generate genisis block using election commission public key (TODO: or private?)
       return false
