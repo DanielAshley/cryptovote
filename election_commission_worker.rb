@@ -4,127 +4,38 @@ require 'json'
 require 'rest-client'
 require 'optparse'
 require './crypto_helper'
-
-# Election commission worker used to initialize the first observer node
-class ElectionCommissionWorker
-  attr_reader :eligible_voters, :eligible_voters_hash, :candidates, :observer, :election_public_key
-
-  # Initializes the election commission worker with the data needed to start the voting blockchain
-  #
-  # @param observer [String] the address of the observer node to be setup
-  # @param eligible_voters [Array] the list of eligible voters.
-  # @param eligible_voters_hash [String] the hash value of the list of eligible voters. @Note the list of eligible voters must not change or be reordered or the hash value wont match.
-  # @param election_public_key [String] the public key used during the vote. @Note the corresponding private key is kept secret/safe until the end of the election
-  def initialize(observer, eligible_voters, eligible_voters_hash, election_public_key)
-    @observer = observer
-    @eligible_voters = eligible_voters
-    @eligible_voters_hash = eligible_voters_hash
-    @election_public_key = election_public_key
-  end
-
-  def setNodes(nodes)
-    nodes_payload = {
-      nodes: nodes
-    }
-
-    RestClient::Request.new(
-      method: :post,
-      url: "#{observer}/nodes/register",
-      payload: nodes_payload.to_json,
-      headers: { accept: :json, content_type: :json }
-    ).execute do |response, _request, _result|
-      response.to_str
-    end
-  end
-  
-  def getNodes()
-    nodes = JSON.parse(RestClient.get("#{observer}/nodes/registered"))['nodes']
-    return nodes
-  end
-
-  def getChain()
-    chain = JSON.parse(RestClient.get("#{observer}/chain"))['chain']
-    return chain
-  end
-
-  # Voters list setter and getters
-  def getVoters()
-    voters = JSON.parse(RestClient.get("#{observer}/voters"))['voters']
-    return voters
-  end
-
-  def setVoters(voters, voters_hash)    
-    voters_payload = {
-      voters: voters,
-      voters_hash: voters_hash
-    }
-
-    RestClient::Request.new(
-      method: :post,
-      url: "#{observer}/voters_list",
-      payload: voters_payload.to_json,
-      headers: { accept: :json, content_type: :json }
-    ).execute do |response, _request, _result|
-      response.to_str
-    end
-  end
-
-  def resolveChain()
-    chain = JSON.parse(RestClient.get("#{observer}/nodes/resolve"))['chain']
-    return chain
-  end
-
-
-end
+require './worker'
 
 if $PROGRAM_NAME == __FILE__
-  usage = 'usage: ./election_commission_worker.rb -o OBSERVER_ADDRESS'
+  usage = 'usage: ./election_commission_worker.rb -o OBSERVER_ADDRESS -p PUBLIC_VOTERS_KEYS_PATH -h ELIGIBLE_VOTERS_HASH_PATH -e ELECTION_PUBLIC_KEY_PATH\n
+  Example: ./election_commission_worker.rb -o http://localhost:7075 -p "data/public_keys.json" -h "data/public_keys_hash.json" -e "data/election_public.pem"'
 
   options = {}
   OptionParser.new do |opt|
     opt.on('-o', '--observer OBSERVER_ADDRESS') { |o| options[:observer] = o }
+    opt.on('-p', '--public_voter_keys PUBLIC_VOTERS_KEYS_PATH') { |o| options[:public_voter_keys] = o }
+    opt.on('-h', '--public_voter_keys_hash PUBLIC_VOTERS_KEYS_HASH') { |o| options[:public_voter_keys_hash] = o }
+    opt.on('-e', '--election_public_key ELECTION_PUBLIC_KEY_PATH') { |o| options[:election_public_key] = o }
   end.parse!
 
   abort(usage) unless options[:observer]
+  abort(usage) unless options[:public_voter_keys]
+  abort(usage) unless options[:public_voter_keys_hash]
+  abort(usage) unless options[:election_public_key]
 
-  
-  ELIGIBLE_VOTERS_PATH = 'data/public_keys.json'.freeze
-  ELIGIBLE_VOTERS_HASH_PATH = 'data/public_keys_hash.json'.freeze
-  CANDIDATES_PATH = 'data/candidates.json'.freeze
-  ELECTION_PUBLIC_KEY_PATH = 'data/election_public.pem'.freeze
-  eligible_voters = JSON.parse(File.read(ELIGIBLE_VOTERS_PATH))
-  eligible_voters_hash = File.read(ELIGIBLE_VOTERS_HASH_PATH)
-  election_public_key = CryptoHelper.rsa_key(ELECTION_PUBLIC_KEY_PATH)
+  eligible_voters = JSON.parse(File.read(options[:public_voter_keys]))
+  eligible_voters_hash = File.read(options[:public_voter_keys_hash])
+  election_public_key = CryptoHelper.rsa_key(options[:election_public_key])
 
-  worker = ElectionCommissionWorker.new(options[:observer], eligible_voters, eligible_voters_hash, election_public_key)
+  worker = Worker.new(options[:observer], eligible_voters, eligible_voters_hash, election_public_key)
 
   # Verification of votors list
-  voters_list = worker.getVoters()
-  if voters_list.empty?
-    eligible_votors_from_file = worker.eligible_voters
-    #puts eligible_votors_from_file
-    eligible_votors_hash_from_file = worker.eligible_voters_hash
-    #puts eligible_votors_hash_from_file
+  voters_list_success_flag = worker.verifyVotersList()
 
-    #puts CryptoHelper.voters_hash(eligible_votors_from_file)
+  # Verification of the blockchain
+  blockchain_success_flag = worker.verifyBlockchain()
 
-    # Check voter list from file against the pregenerated hash value to verify validity before adding them to the observer node.
-    abort('Error: The hash generated from the voters list provided from file does not match the official voters list hash') unless eligible_votors_hash_from_file == CryptoHelper.voters_hash(eligible_votors_from_file)
-    
-    worker.setVoters(eligible_votors_from_file, eligible_votors_hash_from_file)
-  else
-    # if voter list is not empty
-    abort('Error: The hash generated from the voters list provided from file does not match the official voters list hash') unless worker.eligible_voters_hash == CryptoHelper.voters_hash(voters_list)
-    puts "Voter List Check: Success. The hash of the voters list on the observer node matches the eligible voters hash loaded from file"
-  end
-
-
-  # Verification of the chain
-  local_chain = worker.getChain()
-  if local_chain.empty? # Check if the current chain is empty.
-    # chain is empty generate genisis block using election commission public key (TODO: or private?)
-  else
-    # Check the loaded chain is valid. Also check the genisis block hash against a genisis block hash generated by the election commision public key (TODO: or private?)
-  end
+  puts "Voters list failed verification" unless voters_list_success_flag == true
+  puts "Blockchain failed verification" unless blockchain_success_flag == true
   
 end
