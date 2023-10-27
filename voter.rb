@@ -26,6 +26,7 @@ class Voter
   #
   # @param candidate [String] the candidate the voter would like to vote for.
   # @param observer_address [String] the address of the observer node.
+  # @return [Array] the result of the vote. @TODO not sure of the return type atm.
   def vote(candidate, observer_address)
     vote_plaintext = vote_str(candidate)
     vote_ciphertext = CryptoHelper.rsa_public_encrypt(vote_plaintext, election_public_key)
@@ -53,6 +54,7 @@ class Voter
   # Creates the plaintext version of the vote
   #
   # @param candidate [String] the candidate the voter would like to vote for.
+  # @return [String] the plaintext version of the vote.
   def vote_str(candidate)
     r = SecureRandom.random_number(10**9)
     "#{voter_private_key.key_image.x + voter_private_key.key_image.y}|#{candidate}|#{r}"
@@ -60,6 +62,7 @@ class Voter
 
   # @TODO: Figure this function out :P
   # Creates a signature for the vote
+  # @return [Array] the list of random ring members
   def random_ring_members
     ring_members_hex = eligible_voters.sample(RANDOM_RING_MEMBERS)
     unique_ring_members_hex = (ring_members_hex - [voter_private_key.public_key.to_hex])

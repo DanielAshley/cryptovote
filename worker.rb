@@ -44,6 +44,7 @@ class Worker
   # Gets a list of observer node addresses from a specified observer node address
   #
   # @param observer_address [String] the address of the observer node the list of observer nodes will be requested from.
+  # @return [Array] the list of observer nodes connected to a specific observer node on the network.
   def getNodes(observer_address: @observer)
     nodes = JSON.parse(RestClient.get("#{observer_address}/nodes/registered"))['nodes']
     return nodes
@@ -52,6 +53,7 @@ class Worker
   # Gets the latest blockchain from a specified observer node address
   #
   # @param observer_address [String] the address of the observer node the blockchain will be requested from.
+  # @return [Array] the blockchain contained on a specific observer node on the network.
   def getChain(observer_address: @observer)
     chain = JSON.parse(RestClient.get("#{observer_address}/chain"))['chain']
     return chain
@@ -60,6 +62,7 @@ class Worker
   # Gets the voters list from a specified observer node address
   #
   # @param observer_address [String] the address of the observer node the voter list will be requested from.
+  # @return [Array] the list of voters contained by a specific observer.
   def getVoters(observer_address: @observer)
     voters = JSON.parse(RestClient.get("#{observer_address}/voters"))['voters']
     return voters
@@ -89,6 +92,7 @@ class Worker
   # Triggers a given node to determine if its current chain is the latest on its known network connections
   #
   # @param observer_address [String] the address of the observer node.
+  # @return [Array] the most up to date blockchain from a specific observer node after it has checked the blockchains on its connected network.
   def resolveChain(observer_address: @observer)
     response = JSON.parse(RestClient.get("#{observer_address}/nodes/resolve"))
     puts response['message']
@@ -99,6 +103,7 @@ class Worker
   # Verifies the voter list stored on an observer node
   #
   # @param observer_address [String] the address of the observer node to be verified.
+  # @return [Boolean] returns true if the voter list on a specific observer node has been verified, false if it fails verification.
   def verifyVotersList(observer_address: @observer)   
     # Verification of votors list
     voters_list = getVoters(observer_address: observer_address)
@@ -129,6 +134,7 @@ class Worker
   # Verifies the blockchain stored on an observer node
   #
   # @param observer_address [String] the address of the observer node to be verified.
+  # @return [Boolean] returns true if the blockchain on a specific observer node has been verified, false if it fails verification.
   def verifyBlockchain(observer_address: @observer)
     local_chain = getChain(observer_address: observer_address)
     if local_chain.empty? # Check if the current chain is empty.

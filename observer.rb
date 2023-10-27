@@ -74,7 +74,7 @@ post '/transactions/new', provides: :json do
     return 'Missing values'
   end
 
-  # Create a new Transaction
+  # Attempt to add the new transaction to the blockchain
   index = blockchain.new_transaction(
     vote_cipher: params['vote'], ring_members: params['ring_members'], ring_sig_hex: params['ring_signature']
   )
