@@ -5,15 +5,28 @@ require 'rest-client'
 require 'optparse'
 require './crypto_helper'
 
+# The worker class used to act as a server client, checkig and triggering updates to a specific observer node
 class Worker
-  attr_reader :eligible_voters, :candidates, :parent_observer, :observer, :election_public_key
+  attr_reader :eligible_voters, :parent_observer, :observer, :election_public_key
 
-  def initialize(parent_observer, observer)
-    @parent_observer = parent_observer
+  # Initializes the worker with the data needed to start the voting blockchain
+  #
+  # @param observer [String] the address of the observer node to be setup
+  # @param eligible_voters [Array] the list of eligible voters.
+  # @param eligible_voters_hash [String] the hash value of the list of eligible voters. @Note the list of eligible voters must not change or be reordered or the hash value wont match.
+  # @param election_public_key [String] the public key used during the vote. @Note the corresponding private key is kept secret/safe until the end of the election
+  def initialize(observer, eligible_voters, eligible_voters_hash, election_public_key)
     @observer = observer
+    @eligible_voters = eligible_voters
+    @eligible_voters_hash = eligible_voters_hash
+    @election_public_key = election_public_key
   end
 
-  def postNodes(observer_address, nodes)
+  # Posts a list of observer node addresses to a specified observer node address
+  #
+  # @param nodes [List] the observer node address to be linked to a specified (or default) observer node
+  # @param observer_address [String] the address of the observer node the list of observer nodes will be added to
+  def setNodes(nodes, observer_address: @observer)
     nodes_payload = {
       nodes: nodes
     }
@@ -28,28 +41,110 @@ class Worker
     end
   end
   
-  def getNodes(observer_address)
+  # Gets a list of observer node addresses from a specified observer node address
+  #
+  # @param observer_address [String] the address of the observer node the list of observer nodes will be requested from.
+  # @return [Array] the list of observer nodes connected to a specific observer node on the network.
+  def getNodes(observer_address: @observer)
     nodes = JSON.parse(RestClient.get("#{observer_address}/nodes/registered"))['nodes']
     return nodes
   end
-
-  def getChain(observer_address)
+  
+  # Gets the latest blockchain from a specified observer node address
+  #
+  # @param observer_address [String] the address of the observer node the blockchain will be requested from.
+  # @return [Array] the blockchain contained on a specific observer node on the network.
+  def getChain(observer_address: @observer)
     chain = JSON.parse(RestClient.get("#{observer_address}/chain"))['chain']
     return chain
   end
 
-  def getVoters(observer_address)
+  # Gets the voters list from a specified observer node address
+  #
+  # @param observer_address [String] the address of the observer node the voter list will be requested from.
+  # @return [Array] the list of voters contained by a specific observer.
+  def getVoters(observer_address: @observer)
     voters = JSON.parse(RestClient.get("#{observer_address}/voters"))['voters']
     return voters
   end
 
-  def resolveChain(observer_address)
-    response = JSON.parse(RestClient.get("#{observer_address}/nodes/resolve"))
-    puts response['message']
-    voters = response['chain']
-    return voters
+  # Sends a voters list to a specified observer node address
+  #
+  # @param voters [List] the list of voters to be sent to a specific oberserver node
+  # @param voters_hash [String] the hash generated from the list of voters
+  # @param observer_address [String] the address of the observer node the voter list will be sent to.
+  def setVoters(voters, voters_hash, observer_address: @observer)    
+    voters_payload = {
+      voters: voters,
+      voters_hash: voters_hash
+    }
+
+    RestClient::Request.new(
+      method: :post,
+      url: "#{observer_address}/voters_list",
+      payload: voters_payload.to_json,
+      headers: { accept: :json, content_type: :json }
+    ).execute do |response, _request, _result|
+      response.to_str
+    end
   end
 
+  # Triggers a given node to determine if its current chain is the latest on its known network connections
+  #
+  # @param observer_address [String] the address of the observer node.
+  # @return [Array] the most up to date blockchain from a specific observer node after it has checked the blockchains on its connected network.
+  def resolveChain(observer_address: @observer)
+    response = JSON.parse(RestClient.get("#{observer_address}/nodes/resolve"))
+    puts response['message']
+    chain = response['chain']
+    return chain
+  end
+  
+  # Verifies the voter list stored on an observer node
+  #
+  # @param observer_address [String] the address of the observer node to be verified.
+  # @return [Boolean] returns true if the voter list on a specific observer node has been verified, false if it fails verification.
+  def verifyVotersList(observer_address: @observer)   
+    # Verification of votors list
+    voters_list = getVoters(observer_address: observer_address)
+    if voters_list.empty?
+      eligible_votors_from_file = @eligible_voters
+      eligible_votors_hash_from_file = @eligible_voters_hash
+
+      # Check voter list from file against the pregenerated hash value to verify validity before adding them to the observer node.
+      if eligible_votors_hash_from_file != CryptoHelper.voters_hash(eligible_votors_from_file)
+        pust 'Error: The hash generated from the voters list provided from file does not match the official voters list hash'
+        return false
+      end
+  
+      setVoters(eligible_votors_from_file, eligible_votors_hash_from_file)
+    else
+      # if voter list is not empty
+      if @eligible_voters_hash != CryptoHelper.voters_hash(voters_list)
+        puts 'Error: The hash generated from the voters list provided from file does not match the official voters list hash'
+        return false
+      end
+
+      #puts "Voter List Check: Success. The hash of the voters list on the observer node matches the eligible voters hash loaded from file"
+    end
+    return true
+  end
+
+  # @TODO: Perform more thourough verification
+  # Verifies the blockchain stored on an observer node
+  #
+  # @param observer_address [String] the address of the observer node to be verified.
+  # @return [Boolean] returns true if the blockchain on a specific observer node has been verified, false if it fails verification.
+  def verifyBlockchain(observer_address: @observer)
+    local_chain = getChain(observer_address: observer_address)
+    if local_chain.empty? # Check if the current chain is empty.
+      # chain is empty, generate genisis block using election commission public key (TODO: or private?)
+      return false
+    else
+      # Check the loaded chain is valid. Also check the genisis block hash against a genisis block hash generated by the election commision public key (TODO: or private?)
+    end
+    return true
+  end
 
 end
 

@@ -5,14 +5,16 @@ require './voter.rb'
 
 if __FILE__ == $0
 
-  usage = 'usage: RING_MEMBERS=10 OBSERBER_ADDRESS=http://localhost:4567 ./election_perftest.rb -v NUMBER_OF_VOTERS'
+  usage = 'usage: ./election_perftest.rb -v NUMBER_OF_VOTERS -o OBSERBER_ADDRESS'
 
   options = {}
   OptionParser.new do |opt|
     opt.on('-v', '--voters NUMBER_OF_VOTERS') { |o| options[:voters] = o }
+    opt.on('-o', '--observer OBSERBER_ADDRESS') { |o| options[:observer] = o }
   end.parse!
 
   abort(usage) unless options[:voters]
+  abort(usage) unless options[:observer]
   
   voter_keys = JSON.parse(File.read('data/private_keys.json')).sample(options[:voters].to_i)
   candidates = JSON.parse(File.read('data/candidates.json'))
@@ -22,7 +24,7 @@ if __FILE__ == $0
     voter = Voter.new(voter_key)
     puts "#{voter_key} is voting"
     vote_start = Time.now 
-    voter.vote(candidates.sample, ENV['OBSERBER_ADDRESS'])
+    voter.vote(candidates.sample, options[:observer])
     vote_finish = Time.now
     puts "Vote took #{vote_finish-vote_start} seconds"
   end

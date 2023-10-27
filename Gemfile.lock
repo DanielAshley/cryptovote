@@ -41,6 +41,7 @@ GEM
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.8.2)
+    yard (0.9.34)
 
 PLATFORMS
   x86_64-linux
@@ -53,6 +54,7 @@ DEPENDENCIES
   sinatra
   sinatra-json
   thin
+  yard
 
 BUNDLED WITH
    2.3.5
