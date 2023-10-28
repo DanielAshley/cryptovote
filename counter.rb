@@ -6,14 +6,11 @@ require 'optparse'
 require './validator'
 
 class Counter
-
-  ELECTION_PRIVATE_KEY_PATH = 'data/election_private.pem'.freeze
-
   attr_reader :chain, :election_private_key, :validator
 
-  def initialize(chain)
+  def initialize(chain, election_private_key_path)
     @chain = chain
-    @election_private_key = CryptoHelper.rsa_key(ELECTION_PRIVATE_KEY_PATH)
+    @election_private_key = CryptoHelper.rsa_key(election_private_key_path)
     @validator = Validator.new(chain)
   end
 
@@ -48,18 +45,19 @@ class Counter
 end
 
 if $PROGRAM_NAME == __FILE__
-  usage = 'usage: ./counter.rb -c CHAIN_URL'
+  usage = 'usage: ./counter.rb -c CHAIN_URL -p ELECTION_PRIVATE_KEY_PATH'
 
   options = {}
   OptionParser.new do |opt|
     opt.on('-c', '--chain CHAIN_URL') { |o| options[:chain_url] = o }
+    opt.on('-p', '--election_private_key_path ELECTION_PRIVATE_KEY_PATH') { |o| options[:election_private_key_path] = o }
   end.parse!
 
   abort(usage) unless options[:chain_url]
 
   chain = JSON.parse(RestClient.get(options[:chain_url]))['chain']
 
-  counter = Counter.new(chain)
+  counter = Counter.new(chain, options[:election_private_key_path])
   start = Time.now
   
   # The Election Tally
