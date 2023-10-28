@@ -30,8 +30,12 @@ curl http://localhost:7075/chain
 ```
 
 ## Vote
+
+./voter.rb -p PRIVATE_KEY -c CANDIDATE_NAME -o OBSERVER_ADDRESS -v VOTERS_LIST_HASH -e ELECTION_PUBLIC_KEY
+
+Example:
 ```
-OBSERVER_ADDRESS=http://localhost:7075 ./voter.rb -p 000000000000000000000000000000004a0f1e1ec8b44d4bba77616574b177ce -c "Hulk"
+./voter.rb -p 000000000000000000000000000000004a0f1e1ec8b44d4bba77616574b177ce -c "Hulk" -o "http://localhost:7075" -v "data/public_keys.json" -e "data/election_public.pem"
 ```
 
 ## Count the votes
