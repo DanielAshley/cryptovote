@@ -8,3 +8,7 @@ gem 'rest-client'
 gem 'openssl'
 gem 'ring_sig'
 gem 'yard'
+
+#group :test, :development do
+  gem 'rspec-rails'
+#end

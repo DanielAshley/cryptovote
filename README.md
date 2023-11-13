@@ -5,8 +5,7 @@ PoC implementation for the blockchain based election protocol – CryptoVote
 ## Install ruby and gems (Ubuntu)
 ```
 sudo apt-get update
-sudo apt-get install libssl-dev
-sudo apt-get install ruby-full ruby-bundle ruby rdoc
+sudo apt-get install libssl-dev gcc g++ make ruby-full ruby-bundler ruby rdoc
 ```
 ## Install required gems
 ```
