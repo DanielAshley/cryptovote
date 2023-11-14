@@ -42,9 +42,16 @@ Example:
 ./counter.rb -c "http://localhost:7075/chain" -p "data/election_private.pem"
 ```
 
-## Testing
+## Mock Election
 
 #### Run atleast one observer before testing.
 ```
 ./election_perftest.rb -v 5 -o "http://localhost:7075" -e "data/election_public.pem"
+```
+
+## Code Testing
+
+#### Run atleast one observer before testing.
+```
+rspec spec
 ```
