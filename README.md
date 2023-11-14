@@ -22,6 +22,10 @@ PORT=7075 ./observer.rb
 docker build -t cryptovote .
 docker run -it -p 127.0.0.1:7075:7075 --net="host" --rm --name observer cryptovote
 ```
+#### Or using docker compose
+```
+docker compose up -d --scale observer=6
+```
 
 ## View the blockchain
 ```
