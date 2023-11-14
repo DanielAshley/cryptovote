@@ -7,12 +7,7 @@ networks:
 services:
   observer:
     image: cryptovote
-    #network_mode: "host"
     networks:
       - my-network
-    #environment:
-    #  - PORT=7075
     ports:
-      - 7075:7075
-      #ports:
-    #  - 7075:7075
+      - 10000-10005:7075

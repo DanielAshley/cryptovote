@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'puma'
+gem 'webrick'
 gem 'sinatra'
 gem 'sinatra-json'
 gem 'json'
