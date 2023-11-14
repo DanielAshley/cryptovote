@@ -1,4 +1,4 @@
-FROM ruby:3.0
+FROM ruby:bullseye
 
 # throw errors if Gemfile has been modified since Gemfile.lock
 RUN bundle config --global frozen 1
@@ -12,6 +12,6 @@ COPY /data ./data
 COPY blockchain.rb observer.rb validator.rb crypto_helper.rb worker.rb ./
 
 # default port
-ENV PORT=7075
+EXPOSE 7075
 
 CMD ["./observer.rb"]
