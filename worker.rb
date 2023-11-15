@@ -149,18 +149,21 @@ class Worker
 end
 
 if $PROGRAM_NAME == __FILE__
-  usage = 'usage: ./worker.rb -p PARENT_OBSERVER -o LOCAL_OBSERVER_ADDRESS'
+  usage = 'usage: ./worker.rb -p PARENT_OBSERVER -o LOCAL_OBSERVER_ADDRESS -h ELIGIBLE_VOTERS_HASH_PATH -e ELECTION_PUBLIC_KEY_PATH'
 
   options = {}
   OptionParser.new do |opt|
     opt.on('-p', '--parent_observer PARENT_OBSERVER') { |o| options[:parent_observer] = o }
     opt.on('-o', '--observer LOCAL_OBSERVER_ADDRESS') { |o| options[:observer] = o }
+    opt.on('-h', '--public_voter_keys_hash PUBLIC_VOTERS_KEYS_HASH') { |o| options[:public_voter_keys_hash] = o }
+    opt.on('-e', '--election_public_key ELECTION_PUBLIC_KEY_PATH') { |o| options[:election_public_key] = o }
   end.parse!
 
   abort(usage) unless options[:parent_observer]
   abort(usage) unless options[:observer]
-
-  worker = Worker.new(options[:parent_observer], options[:observer])
+  
+  #(observer, eligible_voters, eligible_voters_hash, election_public_key)
+  worker = Worker.new(options[:observer])
 
   # ITEM 1 - Local observer needs to be verified.
   # This includes checking if there is currently a chain and if its valid. 
@@ -233,9 +236,7 @@ if $PROGRAM_NAME == __FILE__
 
 
 
-
-
-
+  
   #puts worker.getNodes(options[:parent_observer])
   #puts worker.getNodes(options[:observer])
 

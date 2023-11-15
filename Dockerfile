@@ -1,17 +1,14 @@
-FROM ruby:3.0
-
-# throw errors if Gemfile has been modified since Gemfile.lock
-RUN bundle config --global frozen 1
+FROM ruby
 
 WORKDIR /usr/src/app
 
-COPY Gemfile Gemfile.lock ./
+COPY Gemfile ./
 RUN bundle install
 
 COPY /data ./data
-COPY blockchain.rb observer.rb validator.rb crypto_helper.rb worker.rb ./
+COPY blockchain.rb observer.rb validator.rb crypto_helper.rb ./
 
 # default port
-ENV PORT=7075
+EXPOSE 7075
 
-CMD ["./observer.rb"]
+CMD ruby observer.rb

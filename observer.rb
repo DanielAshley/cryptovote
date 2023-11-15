@@ -7,7 +7,8 @@ require 'json'
 
 require './blockchain'
 
-set :port, ENV['PORT'] || '4567'
+set :port, ENV['PORT'] || '7075'
+set :bind, '0.0.0.0'
 
 # Generate a globally unique address for this node
 node_identifier = SecureRandom.uuid.delete('-')

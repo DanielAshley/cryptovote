@@ -1,15 +1,16 @@
 #!/usr/bin/env ruby
 
 require 'json'
-require 'rest-client'
 require 'optparse'
 require './crypto_helper'
 require './worker'
 
+# Program to be used to setup an initial blockchain observer node, initializing all the reqired fields such as the voters list and election public key.
 if $PROGRAM_NAME == __FILE__
   usage = 'usage: ./election_commission_worker.rb -o OBSERVER_ADDRESS -p PUBLIC_VOTERS_KEYS_PATH -h ELIGIBLE_VOTERS_HASH_PATH -e ELECTION_PUBLIC_KEY_PATH\n
   Example: ./election_commission_worker.rb -o http://localhost:7075 -p "data/public_keys.json" -h "data/public_keys_hash.json" -e "data/election_public.pem"'
 
+  # Parse the input parameters
   options = {}
   OptionParser.new do |opt|
     opt.on('-o', '--observer OBSERVER_ADDRESS') { |o| options[:observer] = o }
@@ -18,15 +19,18 @@ if $PROGRAM_NAME == __FILE__
     opt.on('-e', '--election_public_key ELECTION_PUBLIC_KEY_PATH') { |o| options[:election_public_key] = o }
   end.parse!
 
+  # verify the required input parameters are present
   abort(usage) unless options[:observer]
   abort(usage) unless options[:public_voter_keys]
   abort(usage) unless options[:public_voter_keys_hash]
   abort(usage) unless options[:election_public_key]
 
+  # Parse the input files into local variables
   eligible_voters = JSON.parse(File.read(options[:public_voter_keys]))
   eligible_voters_hash = File.read(options[:public_voter_keys_hash])
   election_public_key = CryptoHelper.rsa_key(options[:election_public_key])
 
+  # Start a new worker node with the provided data
   worker = Worker.new(options[:observer], eligible_voters, eligible_voters_hash, election_public_key)
 
   # Verification of votors list
