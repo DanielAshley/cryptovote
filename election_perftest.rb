@@ -22,12 +22,13 @@ if __FILE__ == $0
 
   candidates = JSON.parse(File.read('data/candidates.json'))
 
+
   election_start = Time.now
   voter_keys.each do |voter_key|
     voter = Voter.new(voter_key, options[:election_public_key])
     puts "#{voter_key} is voting"
     vote_start = Time.now 
-    voter.vote(candidates.sample, options[:observer])
+    voter.vote(candidates.sample, options[:observer] + ":" + rand(10000..10005).to_s)
     vote_finish = Time.now
     puts "Vote took #{vote_finish-vote_start} seconds"
   end
